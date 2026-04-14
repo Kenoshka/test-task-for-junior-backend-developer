@@ -18,6 +18,7 @@ type Task struct {
 	IsPeriodical bool     `json:"is_periodical"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
+	Periodicity *Periodicity `json:"periodicity,omitempty"`
 }
 
 func (s Status) Valid() bool {

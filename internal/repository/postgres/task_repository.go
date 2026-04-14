@@ -51,7 +51,35 @@ func (r *Repository) GetByID(ctx context.Context, id int64) (*taskdomain.Task, e
 		return nil, err
 	}
 
+	if found.IsPeriodical {
+		periodicity, err := r.getPeriodicityByTaskID(ctx, found.ID)
+		if err != nil {
+			return nil, err
+		}
+		found.Periodicity = periodicity
+	}
+
 	return found, nil
+}
+
+func (r *Repository) getPeriodicityByTaskID(ctx context.Context, taskID int64) (*taskdomain.Periodicity, error) {
+	const query = `
+		SELECT id, task_id, daily, monthly, dates, is_even
+		FROM periodicities
+		WHERE task_id = $1
+	`
+
+	row := r.pool.QueryRow(ctx, query, taskID)
+
+	var p taskdomain.Periodicity
+	if err := row.Scan(&p.ID, &p.TaskID, &p.Daily, &p.Monthly, &p.Dates, &p.IsEven); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &p, nil
 }
 
 func (r *Repository) Update(ctx context.Context, task *taskdomain.Task) (*taskdomain.Task, error) {

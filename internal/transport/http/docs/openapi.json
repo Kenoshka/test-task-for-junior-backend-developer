@@ -153,6 +153,40 @@
       }
     },
     "schemas": {
+      "Periodicity": {
+        "type": "object",
+        "description": "Periodicity settings. Exactly one of `daily`, `monthly`, `dates`, `is_even` must be provided.",
+        "properties": {
+          "daily": {
+            "type": "integer",
+            "minimum": 1,
+            "nullable": true,
+            "description": "Repeat every N-th day",
+            "example": 2
+          },
+          "monthly": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 31,
+            "nullable": true,
+            "description": "Day of month (1-31)",
+            "example": 15
+          },
+          "dates": {
+            "type": "array",
+            "nullable": true,
+            "description": "Explicit list of dates",
+            "items": { "type": "string", "format": "date" },
+            "example": ["2026-05-01", "2026-05-15"]
+          },
+          "is_even": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "If true — even days of month; if false — odd days",
+            "example": true
+          }
+        }
+      },
       "CreateTaskRequest": {
         "type": "object",
         "required": ["title"],
@@ -169,6 +203,15 @@
             "type": "string",
             "enum": ["new", "in_progress", "done"],
             "example": "new"
+          },
+          "is_periodical": {
+            "type": "boolean",
+            "default": false,
+            "example": false
+          },
+          "periodicity": {
+            "allOf": [{ "$ref": "#/components/schemas/Periodicity" }],
+            "description": "Required when `is_periodical` is true; ignored otherwise."
           }
         }
       },
@@ -188,6 +231,15 @@
             "type": "string",
             "enum": ["new", "in_progress", "done"],
             "example": "in_progress"
+          },
+          "is_periodical": {
+            "type": "boolean",
+            "default": false,
+            "example": true
+          },
+          "periodicity": {
+            "allOf": [{ "$ref": "#/components/schemas/Periodicity" }],
+            "description": "Required when `is_periodical` is true. When `is_periodical` is false, any existing periodicity record is removed."
           }
         }
       },
@@ -205,6 +257,10 @@
             "enum": ["new", "in_progress", "done"],
             "example": "new"
           },
+          "is_periodical": {
+            "type": "boolean",
+            "example": false
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -214,7 +270,28 @@
             "type": "string",
             "format": "date-time",
             "example": "2026-03-24T00:00:00Z"
+          },
+          "periodicity": {
+            "nullable": true,
+            "allOf": [{ "$ref": "#/components/schemas/PeriodicityResponse" }],
+            "description": "Present only when is_periodical is true"
           }
+        }
+      },
+      "PeriodicityResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64", "example": 10 },
+          "task_id": { "type": "integer", "format": "int64", "example": 6 },
+          "daily": { "type": "integer", "nullable": true, "example": 2 },
+          "monthly": { "type": "integer", "nullable": true, "example": 15 },
+          "dates": {
+            "type": "array",
+            "nullable": true,
+            "items": { "type": "string", "format": "date" },
+            "example": ["2026-05-01", "2026-05-15"]
+          },
+          "is_even": { "type": "boolean", "nullable": true, "example": true }
         }
       },
       "Error": {
