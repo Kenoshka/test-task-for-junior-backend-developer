@@ -14,6 +14,7 @@ type Periodicity struct {
 	Monthly *int        `json:"monthly,omitempty"`
 	Dates   []time.Time `json:"dates,omitempty"`
 	IsEven  *bool       `json:"is_even,omitempty"`
+	LastUsage time.Time `json:"last_usage"`
 }
 
 func (p *Periodicity) Validate() error {

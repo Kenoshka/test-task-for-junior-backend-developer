@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS periodicities (
 	monthly INTEGER NULL,
 	dates DATE[] NULL,
 	is_even BOOLEAN NULL,
+	last_usage DATE NOT NULL DEFAULT CURRENT_DATE,
 	CONSTRAINT periodicities_exactly_one_kind CHECK (
 		num_nonnulls(daily, monthly, dates, is_even) = 1
 	),

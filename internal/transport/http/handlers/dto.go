@@ -48,12 +48,13 @@ type taskMutationDTO struct {
 }
 
 type periodicityResponseDTO struct {
-	ID      int64      `json:"id"`
-	TaskID  int64      `json:"task_id"`
-	Daily   *int       `json:"daily,omitempty"`
-	Monthly *int       `json:"monthly,omitempty"`
-	Dates   []jsonDate `json:"dates,omitempty"`
-	IsEven  *bool      `json:"is_even,omitempty"`
+	ID        int64      `json:"id"`
+	TaskID    int64      `json:"task_id"`
+	Daily     *int       `json:"daily,omitempty"`
+	Monthly   *int       `json:"monthly,omitempty"`
+	Dates     []jsonDate `json:"dates,omitempty"`
+	IsEven    *bool      `json:"is_even,omitempty"`
+	LastUsage jsonDate   `json:"last_usage"`
 }
 
 type taskDTO struct {
@@ -111,11 +112,12 @@ func newPeriodicityResponseDTO(p *taskdomain.Periodicity) *periodicityResponseDT
 		}
 	}
 	return &periodicityResponseDTO{
-		ID:      p.ID,
-		TaskID:  p.TaskID,
-		Daily:   p.Daily,
-		Monthly: p.Monthly,
-		Dates:   dates,
-		IsEven:  p.IsEven,
+		ID:        p.ID,
+		TaskID:    p.TaskID,
+		Daily:     p.Daily,
+		Monthly:   p.Monthly,
+		Dates:     dates,
+		IsEven:    p.IsEven,
+		LastUsage: jsonDate{Time: p.LastUsage},
 	}
 }

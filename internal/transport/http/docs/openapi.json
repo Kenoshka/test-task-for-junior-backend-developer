@@ -291,7 +291,13 @@
             "items": { "type": "string", "format": "date" },
             "example": ["2026-05-01", "2026-05-15"]
           },
-          "is_even": { "type": "boolean", "nullable": true, "example": true }
+          "is_even": { "type": "boolean", "nullable": true, "example": true },
+          "last_usage": {
+            "type": "string",
+            "format": "date",
+            "description": "Last date when the periodicity cron re-activated the task",
+            "example": "2026-04-14"
+          }
         }
       },
       "Error": {

@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -64,7 +65,7 @@ func (r *Repository) GetByID(ctx context.Context, id int64) (*taskdomain.Task, e
 
 func (r *Repository) getPeriodicityByTaskID(ctx context.Context, taskID int64) (*taskdomain.Periodicity, error) {
 	const query = `
-		SELECT id, task_id, daily, monthly, dates, is_even
+		SELECT id, task_id, daily, monthly, dates, is_even, last_usage
 		FROM periodicities
 		WHERE task_id = $1
 	`
@@ -72,7 +73,7 @@ func (r *Repository) getPeriodicityByTaskID(ctx context.Context, taskID int64) (
 	row := r.pool.QueryRow(ctx, query, taskID)
 
 	var p taskdomain.Periodicity
-	if err := row.Scan(&p.ID, &p.TaskID, &p.Daily, &p.Monthly, &p.Dates, &p.IsEven); err != nil {
+	if err := row.Scan(&p.ID, &p.TaskID, &p.Daily, &p.Monthly, &p.Dates, &p.IsEven, &p.LastUsage); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
@@ -161,17 +162,53 @@ func (r *Repository) UpsertPeriodicity(ctx context.Context, p *taskdomain.Period
 			monthly = EXCLUDED.monthly,
 			dates = EXCLUDED.dates,
 			is_even = EXCLUDED.is_even
-		RETURNING id, task_id, daily, monthly, dates, is_even
+		RETURNING id, task_id, daily, monthly, dates, is_even, last_usage
 	`
 
 	row := r.pool.QueryRow(ctx, query, p.TaskID, p.Daily, p.Monthly, p.Dates, p.IsEven)
 
 	var out taskdomain.Periodicity
-	if err := row.Scan(&out.ID, &out.TaskID, &out.Daily, &out.Monthly, &out.Dates, &out.IsEven); err != nil {
+	if err := row.Scan(&out.ID, &out.TaskID, &out.Daily, &out.Monthly, &out.Dates, &out.IsEven, &out.LastUsage); err != nil {
 		return nil, err
 	}
 
 	return &out, nil
+}
+
+func (r *Repository) ListPeriodicities(ctx context.Context) ([]taskdomain.Periodicity, error) {
+	const query = `
+		SELECT id, task_id, daily, monthly, dates, is_even, last_usage
+		FROM periodicities
+	`
+
+	rows, err := r.pool.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := make([]taskdomain.Periodicity, 0)
+	for rows.Next() {
+		var p taskdomain.Periodicity
+		if err := rows.Scan(&p.ID, &p.TaskID, &p.Daily, &p.Monthly, &p.Dates, &p.IsEven, &p.LastUsage); err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+
+	return out, rows.Err()
+}
+
+func (r *Repository) TouchPeriodicityLastUsage(ctx context.Context, id int64, lastUsage time.Time) error {
+	const query = `UPDATE periodicities SET last_usage = $2 WHERE id = $1`
+	_, err := r.pool.Exec(ctx, query, id, lastUsage)
+	return err
+}
+
+func (r *Repository) SetTaskStatus(ctx context.Context, taskID int64, status taskdomain.Status, updatedAt time.Time) error {
+	const query = `UPDATE tasks SET status = $2, updated_at = $3 WHERE id = $1`
+	_, err := r.pool.Exec(ctx, query, taskID, status, updatedAt)
+	return err
 }
 
 func (r *Repository) DeletePeriodicity(ctx context.Context, taskID int64) error {
